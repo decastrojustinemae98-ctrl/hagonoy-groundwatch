@@ -1,0 +1,655 @@
+<title>Hagonoy GroundWatch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Nunito:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout concept: matches the group's land-use poster. Soft light-green gradient, dark-green serif headings,
+   pill labels, rounded cards, brown-red for problems, a leaf mark. A ground-level gauge in the hero. */
+:root{
+  --bg:#EAF4DD; --bg-grad:linear-gradient(165deg,#F6FAEC 0%,#DDEEC9 100%); --surface:#F9FCF2; --alt:rgba(255,255,255,.55);
+  --ink:#16361F; --muted:#41604A; --line:#A9CB92; --head:#1B5E20;
+  --water:#2E7D32; --water-ink:#1B5E20; --on-water:#FFFFFF; --pill:#2E7D32; --pill-ink:#FFFFFF;
+  --hero-bg:#1B4D2B; --hero-ink:#EEF7E6; --hero-muted:#B8D9B0; --hero-accent:#A5DD94;
+  --alert:#8B2E1F; --alert-bg:#F4E1D6; --ok:#1F7A3E; --ok-bg:#DCEFD2; --bad:#B3261E; --bad-bg:#FBE3E1;
+  --k1:#8B2E1F; --k2:#2E7D32; --k3:#7A5AA6; --k4:#0B7285;
+  --font-display:'Playfair Display',Georgia,'Times New Roman',serif;
+  --font-body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1F14; --bg-grad:linear-gradient(165deg,#12281A 0%,#0B1A10 100%); --surface:#16301F; --alt:rgba(255,255,255,.04);
+  --ink:#E6F2DD; --muted:#A7C4A0; --line:#2F5A3A; --head:#BFE3A8;
+  --water:#7FCB7F; --water-ink:#8FDB8F; --on-water:#0E2A16; --pill:#2F6B3A; --pill-ink:#E6F2DD;
+  --hero-bg:#0A1A10; --hero-ink:#EEF7E6; --hero-muted:#9CC59A; --hero-accent:#8FDB8F;
+  --alert:#F0A27A; --alert-bg:#3A2218; --ok:#5CC596; --ok-bg:#12352A; --bad:#F2928B; --bad-bg:#3C1B19;
+  --k1:#F0A27A; --k2:#7FCB7F; --k3:#B99BE0; --k4:#4FB8C9; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1F14; --bg-grad:linear-gradient(165deg,#12281A 0%,#0B1A10 100%); --surface:#16301F; --alt:rgba(255,255,255,.04);
+  --ink:#E6F2DD; --muted:#A7C4A0; --line:#2F5A3A; --head:#BFE3A8;
+  --water:#7FCB7F; --water-ink:#8FDB8F; --on-water:#0E2A16; --pill:#2F6B3A; --pill-ink:#E6F2DD;
+  --hero-bg:#0A1A10; --hero-ink:#EEF7E6; --hero-muted:#9CC59A; --hero-accent:#8FDB8F;
+  --alert:#F0A27A; --alert-bg:#3A2218; --ok:#5CC596; --ok-bg:#12352A; --bad:#F2928B; --bad-bg:#3C1B19;
+  --k1:#F0A27A; --k2:#7FCB7F; --k3:#B99BE0; --k4:#4FB8C9; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:68px}
+body{background:var(--bg);background-image:var(--bg-grad);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--hero-bg)}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);line-height:1.1;text-wrap:balance;margin:0}
+h2{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:800;color:var(--head)}
+h3{font-size:1.2rem;font-weight:800;color:var(--head)}
+p{margin:0 0 1rem;max-width:68ch}
+a{color:var(--water-ink)}
+:focus-visible{outline:3px solid var(--water);outline-offset:2px;border-radius:3px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.eyebrow{display:inline-block;background:var(--pill);color:var(--pill-ink);font-family:var(--font-body);font-weight:800;font-size:.9rem;letter-spacing:.02em;padding:.3rem 1rem;border-radius:999px;margin:0 0 .8rem}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--hero-bg);
+  margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+.nav .wrap{display:flex;align-items:center;gap:1rem;height:52px}
+.brand{font-family:var(--font-display);font-weight:800;color:var(--hero-ink);text-decoration:none;white-space:nowrap;letter-spacing:.01em}
+.brand b{color:var(--hero-accent)}.brand svg{vertical-align:-3px;margin-right:.35rem;color:var(--hero-accent)}
+.nav ul{list-style:none;display:flex;gap:.25rem;margin:0;padding:0;overflow-x:auto;scrollbar-width:none;flex:1}
+.nav ul::-webkit-scrollbar{display:none}
+.nav a.l{display:block;padding:.4rem .7rem;border-radius:6px;color:var(--hero-muted);text-decoration:none;font-size:.9rem;white-space:nowrap}
+.nav a.l:hover,.nav a.l.on{color:var(--hero-ink);background:rgba(255,255,255,.1)}
+.theme{background:none;border:1px solid var(--hero-muted);color:var(--hero-ink);border-radius:6px;padding:.3rem .6rem;font:inherit;font-size:.8rem;cursor:pointer}
+
+/* hero */
+.hero{background:var(--hero-bg);background-image:radial-gradient(circle at 82% 25%,rgba(165,221,148,.2),transparent 55%);color:var(--hero-ink);
+  margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));padding-block:3rem 3.5rem}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:2.5rem;align-items:center}
+.head .eyebrow,.eyebrow{color:var(--pill-ink)}
+.hero .eyebrow{background:rgba(165,221,148,.2);color:var(--hero-ink)}
+.panel[hidden]{display:none}
+.hero h1{font-size:clamp(2.3rem,6.5vw,4.3rem);font-weight:800;letter-spacing:-.01em;color:var(--hero-ink)}
+.hero h1 span{color:var(--hero-accent)}
+.hero p.lead{font-size:1.15rem;color:var(--hero-ink);margin-top:1.2rem}
+.hero .fil{font-style:italic;color:var(--hero-muted)}
+.cta{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.5rem}
+.btn{display:inline-block;border:0;border-radius:999px;padding:.7rem 1.1rem;font:600 .95rem var(--font-body);cursor:pointer;text-decoration:none;background:var(--water);color:var(--on-water)}
+.hero .btn:not(.ghost){background:var(--hero-accent);color:#0F2E18}
+.btn.ghost{background:transparent;color:var(--hero-ink);border:1px solid var(--hero-muted)}
+.btn.line{background:transparent;color:var(--water-ink);border:1px solid var(--water)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:2rem}
+.stat{border-top:3px solid var(--hero-accent);padding-top:.5rem}
+.stat b{display:block;font-family:var(--font-mono);font-size:1.2rem;color:var(--hero-ink);font-weight:500}
+.stat span{font-size:.82rem;color:var(--hero-muted);line-height:1.35;display:block}
+.gauge{width:100%;max-width:300px;justify-self:center}
+.gauge text{font-family:var(--font-mono);font-size:11px;fill:var(--hero-muted)}
+.cap{font-size:.78rem;color:var(--hero-muted);text-align:center;margin-top:.5rem}
+
+/* sections */
+section{padding-block:4rem}
+section.alt{background:var(--alt);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+.head{margin-bottom:2rem;max-width:68ch}
+.head p{color:var(--muted);margin-top:.75rem}
+.grid{display:grid;gap:1.25rem}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:1.5rem;min-width:0}
+section.alt .card{background:var(--surface)}
+.card h3{margin-bottom:.5rem}
+.card p:last-child{margin-bottom:0}
+.tag{display:inline-block;font-family:var(--font-body);font-weight:800;font-size:.8rem;padding:.2rem .8rem;border-radius:999px;background:var(--alert-bg);color:var(--alert);margin-bottom:.6rem}
+.tag.w{background:var(--ok-bg);color:var(--ok)}
+.fig{font-family:var(--font-mono);font-size:1.9rem;font-weight:500;color:var(--alert);display:block;line-height:1.1}
+.note{font-size:.88rem;color:var(--muted);border-left:3px solid var(--line);padding-left:.8rem;margin-top:1rem}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.92rem}
+th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+
+/* tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.tab{border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:.5rem 1rem;font:500 .92rem var(--font-body);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--water);color:var(--on-water);border-color:var(--water)}
+.panel{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:1.5rem}
+.panel ul{margin:0;padding-left:1.1rem}
+.panel li{margin-bottom:.5rem}
+
+/* map */
+.mapbox{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:1.25rem;align-items:start}
+.map{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.5rem}
+.map svg{width:100%;height:auto;display:block}
+.land{fill:var(--bg);stroke:var(--muted);stroke-width:1.5}
+.sea{fill:var(--k4);opacity:.2}
+.way{stroke:var(--k4);stroke-width:2;fill:none;opacity:.55}
+.map text{font-family:var(--font-body);font-size:12px;fill:var(--muted)}
+.hs{cursor:pointer}
+.hs circle.ring{fill:transparent;pointer-events:all;stroke-width:2;opacity:.5}
+.hs:focus-visible{outline:none}
+.hs:focus-visible circle.dot,.hs[aria-pressed="true"] circle.dot{stroke:var(--ink);stroke-width:3}
+.k1{fill:var(--k1);stroke:var(--k1)}.k2{fill:var(--k2);stroke:var(--k2)}.k3{fill:var(--k3);stroke:var(--k3)}.k4{fill:var(--k4);stroke:var(--k4)}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1rem;font-size:.82rem;color:var(--muted);padding:.4rem .5rem}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:.4rem;vertical-align:baseline}
+.info{min-height:280px}
+.info .lvl{font-family:var(--font-mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+
+/* calculator */
+.calc{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:1.5rem;align-items:center}
+label{display:block;font-weight:600;margin-bottom:.35rem;font-size:.95rem}
+select,input[type=text],input[type=date],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:.6rem .7rem}
+input[type=range]{width:100%;accent-color:var(--water)}
+.out{font-family:var(--font-mono);font-size:2.2rem;color:var(--alert);line-height:1.1}
+.row{margin-bottom:1rem}
+
+/* quiz */
+.qopt{display:block;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:.7rem .9rem;margin-bottom:.5rem;font:inherit;cursor:pointer}
+.qopt:hover:not(:disabled){border-color:var(--water)}
+.qopt.right{background:var(--ok-bg);border-color:var(--ok);color:var(--ink)}
+.qopt.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--ink)}
+.qopt:disabled{cursor:default}
+.fb{margin:.8rem 0;font-size:.95rem}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:1rem}
+.bar i{display:block;height:100%;background:var(--water);width:0;transition:width .3s}
+.qmeta{font-family:var(--font-mono);font-size:.8rem;color:var(--muted);margin-bottom:.5rem}
+
+details{border-bottom:1px solid var(--line);padding:.9rem 0}
+details summary{font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:1rem}
+details summary::after{content:"+";font-family:var(--font-mono);color:var(--water-ink)}
+details[open] summary::after{content:"–"}
+details p{margin:.7rem 0 0;color:var(--muted)}
+
+/* form */
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.25rem}
+.form .full{grid-column:1/-1}
+.msg{padding:.8rem 1rem;border-radius:8px;background:var(--ok-bg);color:var(--ink);border:1px solid var(--ok);margin-top:1rem}
+.err{color:var(--bad);font-size:.85rem;margin-top:.25rem}
+.saved{margin-top:1.5rem;font-size:.9rem}
+.saved li{margin-bottom:.4rem}
+
+/* refs */
+.refs{list-style:none;padding:0;margin:0}
+.refs li{padding-left:2rem;text-indent:-2rem;margin-bottom:1rem;max-width:80ch;overflow-wrap:anywhere}
+footer{background:var(--hero-bg);color:var(--hero-muted);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:2rem max(16px,env(safe-area-inset-left,0px));font-size:.88rem}
+footer b{color:var(--hero-ink)}
+
+@media (max-width:820px){
+  .hero .wrap,.mapbox,.panel,.calc{grid-template-columns:minmax(0,1fr)}
+  .g2,.g3{grid-template-columns:minmax(0,1fr)}
+  .form{grid-template-columns:minmax(0,1fr)}
+  .gauge{max-width:240px}
+  .stats{grid-template-columns:minmax(0,1fr)}
+  section{padding-block:3rem}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.bar i{transition:none}}
+</style>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#home"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20C4 10 10 4 20 4c0 10-6 16-16 16z" fill="currentColor"/><path d="M4 20L14 10" stroke="#1B4D2B" stroke-width="1.5" fill="none"/></svg>Hagonoy <b>GroundWatch</b></a>
+    <ul id="navlist">
+      <li><a class="l" href="#about">About</a></li>
+      <li><a class="l" href="#causes">Causes &amp; Effects</a></li>
+      <li><a class="l" href="#impact">Community Impact</a></li>
+      <li><a class="l" href="#map">Map</a></li>
+      <li><a class="l" href="#solutions">Solutions</a></li>
+      <li><a class="l" href="#learn">Learn</a></li>
+      <li><a class="l" href="#report">Report</a></li>
+      <li><a class="l" href="#references">References</a></li>
+    </ul>
+    <button class="theme" id="themeBtn" type="button" aria-label="Toggle light or dark theme">Theme</button>
+  </div>
+</header>
+
+<main>
+<!-- HOME -->
+<div class="hero" id="home">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Hagonoy, Bulacan · Environmental awareness</p>
+      <h1>The ground under Hagonoy is <span>sinking.</span></h1>
+      <p class="lead">Land subsidence is the slow lowering of the ground surface. In Hagonoy it makes floods deeper, lets high tides reach homes, and cracks the roads people use every day. This site explains why it happens and what the community can do.</p>
+      <p class="fil">Lumulubog ang lupa sa Hagonoy. Alamin kung bakit, at kung paano tayo makakatulong.</p>
+      <div class="cta">
+        <a class="btn" href="#about">Start learning</a>
+        <a class="btn ghost" href="#map">See affected areas</a>
+        <a class="btn ghost" href="#report">Report what you see</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>up to 124.5 mm/yr</b><span>fastest sinking measured near pumping zones in Hagonoy and Calumpit (2015 to 2021)</span></div>
+        <div class="stat"><b>~3×</b><span>how much faster Philippine sea level is rising than the global average</span></div>
+        <div class="stat"><b>1.5 m</b><span>floodwater depth on the worst tide days in Pugad, Hagonoy</span></div>
+      </div>
+    </div>
+    <div>
+      <svg class="gauge" viewBox="0 0 300 420" role="img" aria-label="Ground gauge illustration. A house sits at ground level zero in 2015. About 89 centimeters lower is where the ground would be in 2026 if the estimated rate of 81 millimeters per year continued.">
+        <rect x="0" y="60" width="300" height="360" fill="#0F7C8C" opacity=".12"/>
+        <!-- staff -->
+        <rect x="150" y="40" width="26" height="360" fill="none" stroke="#9CC1C9" stroke-width="1.5"/>
+        <g stroke="#9CC1C9" stroke-width="1.5">
+          <line x1="150" y1="60" x2="176" y2="60"/><line x1="150" y1="100" x2="168" y2="100"/><line x1="150" y1="140" x2="168" y2="140"/>
+          <line x1="150" y1="180" x2="168" y2="180"/><line x1="150" y1="220" x2="168" y2="220"/><line x1="150" y1="260" x2="168" y2="260"/>
+          <line x1="150" y1="300" x2="168" y2="300"/><line x1="150" y1="340" x2="168" y2="340"/><line x1="150" y1="380" x2="168" y2="380"/>
+        </g>
+        <text x="184" y="50">0 cm</text><text x="184" y="184">−30</text><text x="184" y="304">−60</text><text x="184" y="384">−80</text>
+        <!-- 2015 ground -->
+        <line x1="10" y1="60" x2="290" y2="60" stroke="#E8F3F4" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="12" y="78">GROUND, 2015</text>
+        <g fill="none" stroke="#E8F3F4" stroke-width="2"><path d="M30 60 V32 L62 14 L94 32 V60"/><rect x="52" y="40" width="20" height="20"/></g>
+        <!-- 2026 ground -->
+        <line x1="10" y1="416" x2="290" y2="416" stroke="#F0954A" stroke-width="3"/>
+        <text x="12" y="408" style="fill:#F0954A">GROUND, 2026 (≈ −89 cm)</text>
+        <path d="M10 60 V416" stroke="#F0954A" stroke-width="1.5" stroke-dasharray="3 5"/>
+      </svg>
+      <p class="cap">Illustration only. 11 years at the estimated −81 mm/yr for Hagonoy.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">About land subsidence</p>
+    <h2>What is land subsidence, and why Hagonoy?</h2>
+    <p>Subsidence is the gradual downward movement of the ground surface. It can come from natural processes, such as soft sediment compacting under its own weight, and from human activity, mostly pumping too much groundwater.</p>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>A delta town</h3><p>Hagonoy sits on the low Manila Bay coast. Its municipal center is only about 6 m above sea level, and the town has 26 barangays and 133,448 residents (2020 census). Soft delta sediment compacts easily.</p></div>
+    <div class="card"><h3>Sinking and rising together</h3><p>The ground goes down while the sea comes up. Philippine sea level is rising roughly three times faster than the global average of 3.6 mm a year, so the gap between land and tide closes quickly.</p></div>
+    <div class="card"><h3>Measured from space</h3><p>Researchers track the ground with satellite radar (InSAR) and GNSS stations. Studies of Hagonoy and Calumpit found sinking of about 65 to 125 mm each year, depending on the place and the method.</p></div>
+  </div>
+  <h3 style="margin:2.5rem 0 1rem">What the numbers say</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Figure</th><th>Where</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">up to 124.5 mm/yr</td><td>Near high-extraction zones, Hagonoy and Calumpit, 2015 to Q1 2021</td><td>Maclang et al. (2026)</td></tr>
+      <tr><td class="mono">70.2 mm/yr</td><td>Average within 500 m of pumping stations (65.3 mm/yr farther away)</td><td>Maclang et al. (2026)</td></tr>
+      <tr><td class="mono">≈ 81 mm/yr</td><td>Hagonoy, estimated contribution of about 9 million m³ of groundwater taken each year</td><td>Maclang et al. (2026)</td></tr>
+      <tr><td class="mono">~110 mm/yr</td><td>Fastest rate in the national study, spanning Guiguinto, Balagtas and Bulakan</td><td>Hazard Team NOAH (2024)</td></tr>
+      <tr><td class="mono">20 to 30 mm/yr</td><td>Rapidly subsiding areas of Bulacan, as described by UP-NIGS</td><td>Santos (2023)</td></tr>
+    </tbody></table></div>
+  <p class="note">The figures come from different studies, periods and methods, so they are not a ranking of towns. Treat them as a range that shows the problem is real and serious, not as one exact number for every barangay.</p>
+</div></section>
+
+<!-- CAUSES -->
+<section id="causes" class="alt"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Causes and effects</p>
+    <h2>One cause underneath, three effects on top</h2>
+    <p>Choose a topic to see how groundwater extraction, flooding and infrastructure damage connect.</p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Causes and effects">
+    <button class="tab" role="tab" id="t0" aria-selected="true" aria-controls="p0">Groundwater extraction</button>
+    <button class="tab" role="tab" id="t1" aria-selected="false" aria-controls="p1">Flooding</button>
+    <button class="tab" role="tab" id="t2" aria-selected="false" aria-controls="p2">Infrastructure damage</button>
+  </div>
+  <div class="card">
+    <div class="panel" id="p0" role="tabpanel" aria-labelledby="t0">
+      <div>
+        <span class="tag">Main cause</span>
+        <h3>Pumping water out faster than it refills</h3>
+        <p>When water is taken from underground layers faster than rain and rivers can refill them, the pores in the soil collapse and the ground above settles. This cannot be undone once the clay has compacted.</p>
+        <p>In Hagonoy and Calumpit, satellite data showed faster sinking close to pumping stations than farther away. A regression model using groundwater level, population density and built-up volume explained most of the pattern (adjusted R² of 0.88). Urban growth adds weight and demand on top of the pumping.</p>
+      </div>
+      <div><span class="fig">70.2 mm/yr</span><p style="margin-top:.5rem">average sinking within 500 m of pumping stations, compared with 65.3 mm/yr farther away.</p>
+      <p class="note">Natural compaction of delta sediment and tectonic movement also contribute, but human pumping is the part people can change.</p></div>
+    </div>
+    <div class="panel" id="p1" role="tabpanel" aria-labelledby="t1" hidden>
+      <div>
+        <span class="tag">Effect</span>
+        <h3>The same rain, a deeper flood</h3>
+        <p>When land sinks it sits closer to river and tide levels. Floods from typhoons and the habagat get deeper and stay longer, and high tides alone can push seawater into streets. A study of Metro Manila by the National Water Resources Board linked heavy extraction to floods that take longer to go down.</p>
+        <p>In August 2023, floodwater in Hagonoy reached chest level in homes, and families without an upper floor had no safe place to wait it out.</p>
+      </div>
+      <div><span class="fig">3× a week</span><p style="margin-top:.5rem">how often high tides flood the streets of Pugad, Hagonoy, with water up to 1.5 m on the worst days.</p></div>
+    </div>
+    <div class="panel" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+      <div>
+        <span class="tag">Effect</span>
+        <h3>Roads, houses and bridges move</h3>
+        <p>The ground does not sink evenly. Uneven settling cracks foundations, tilts walls and breaks pavement, and the 2004 NWRB study warned that sudden changes in ground level may damage buildings, bridges and highways.</p>
+        <p>In Hagonoy and Obando, roads and homes are sinking and residents raise their houses or give up the lower floor. Pugad raises its roads about every three years.</p>
+      </div>
+      <div><span class="fig">₱200,000</span><p style="margin-top:.5rem">roughly what one Pugad family has spent raising their house every year since 2022.</p></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:1.25rem">
+    <div class="card"><h3>Seawater intrusion</h3><p>Heavy pumping near the coast can draw salt water into freshwater layers, which damages wells and farmland.</p></div>
+    <div class="card"><h3>Sea level rise</h3><p>Subsidence does not cause sea level rise, but the two add up. The DENR says Philippine sea level rise could accelerate to 13 mm a year.</p></div>
+  </div>
+</div></section>
+
+<!-- IMPACT -->
+<section id="impact"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Community impact</p>
+    <h2>Living with water at the door</h2>
+    <p>The effects are not abstract. They change schedules, budgets and jobs.</p>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Daily life follows the tide</h3><p>In Pugad, school timetables are set by tide charts to lower the risk of flood-borne disease. Homes stand on stilts and small shops use high tables. About 2,500 people live in the island's only village.</p></div>
+    <div class="card"><h3>Money goes into raising, not growing</h3><p>Families keep paying to lift their houses and the barangay keeps paying to raise its roads. Money that could support livelihoods is spent staying above water.</p></div>
+    <div class="card"><h3>Health and safety</h3><p>Repeated flooding exposes families to contaminated water. After the August 2023 floods, a resident of a flooded Bulacan barangay said family members had suffered foot wounds from repeated flooding.</p></div>
+    <div class="card"><h3>Livelihood and place</h3><p>Boatman Rodolfo Tamayo said leaving is not a real option: "We can't go to [other places], we won't have jobs there. We will go hungry." Village captain Jaime Gregorio said it is already hard to imagine life returning to normal.</p></div>
+  </div>
+  <p class="note">Quotes and details are from news reports listed on the References page. Local leadership changes have also made long-term flood measures inconsistent, according to the same reports.</p>
+</div></section>
+
+<!-- MAP -->
+<section id="map" class="alt"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Interactive map</p>
+    <h2>Where subsidence and flooding are being reported</h2>
+    <p>Select a marker to read what research and reports say about that area. Colors show the kind of evidence behind each marker.</p>
+  </div>
+  <div class="mapbox">
+    <div class="map">
+      <svg viewBox="0 0 620 440" role="group" aria-label="Schematic map of Hagonoy with five selectable areas">
+        <rect width="620" height="440" fill="none"/>
+        <path class="sea" d="M0 330 Q120 300 230 340 T430 350 T620 320 V440 H0 Z"/>
+        <path class="land" d="M70 80 Q140 30 260 45 T470 60 Q560 90 575 170 Q580 250 520 300 Q430 335 330 330 Q220 335 140 300 Q60 250 70 170 Z"/>
+        <path class="way" d="M150 120 Q230 170 300 150 T470 200"/>
+        <path class="way" d="M250 70 Q290 160 330 250 T360 330"/>
+        <path class="way" d="M110 220 Q220 240 300 260"/>
+        <text x="270" y="30" text-anchor="middle">CALUMPIT (north)</text>
+        <text x="40" y="240" transform="rotate(-90 40 240)" text-anchor="middle">PAMPANGA DELTA (west)</text>
+        <text x="600" y="190" transform="rotate(90 600 190)" text-anchor="middle">PAOMBONG, BULAKAN (east)</text>
+        <text x="310" y="410" text-anchor="middle" style="font-weight:600">MANILA BAY</text>
+        <text x="470" y="120" style="font-size:11px">tidal waterways</text>
+
+        <g class="hs" tabindex="0" role="button" aria-pressed="false" data-k="pugad" transform="translate(330 305)"><circle class="ring k1" r="18"/><circle class="dot k1" r="9"/><text x="14" y="-14" style="fill:var(--ink);font-weight:600">Pugad</text></g>
+        <g class="hs" tabindex="0" role="button" aria-pressed="false" data-k="pump" transform="translate(300 105)"><circle class="ring k2" r="18"/><circle class="dot k2" r="9"/><text x="14" y="-14" style="fill:var(--ink);font-weight:600">Pumping zones</text></g>
+        <g class="hs" tabindex="0" role="button" aria-pressed="false" data-k="town" transform="translate(300 205)"><circle class="ring k3" r="18"/><circle class="dot k3" r="9"/><text x="14" y="-14" style="fill:var(--ink);font-weight:600">Town center</text></g>
+        <g class="hs" tabindex="0" role="button" aria-pressed="false" data-k="coast" transform="translate(470 290)"><circle class="ring k4" r="18"/><circle class="dot k4" r="9"/><text x="-32" y="32" style="fill:var(--ink);font-weight:600">Bay coast</text></g>
+        <g class="hs" tabindex="0" role="button" aria-pressed="false" data-k="delta" transform="translate(145 190)"><circle class="ring k2" r="18"/><circle class="dot k2" r="9"/><text x="-10" y="-14" style="fill:var(--ink);font-weight:600">West delta</text></g>
+      </svg>
+      <div class="legend">
+        <span><i style="background:var(--k1)"></i>Documented flooding</span>
+        <span><i style="background:var(--k2)"></i>Satellite or GNSS measurement</span>
+        <span><i style="background:var(--k3)"></i>Reported damage</span>
+        <span><i style="background:var(--k4)"></i>Sea level exposure</span>
+      </div>
+    </div>
+    <div class="card info" id="info" aria-live="polite"></div>
+  </div>
+  <p class="note">This is a schematic map for learning. Positions are approximate and the shapes are not to scale. For official hazard maps, check Project NOAH and the Mines and Geosciences Bureau.</p>
+</div></section>
+
+<!-- SOLUTIONS -->
+<section id="solutions"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Mitigation and solutions</p>
+    <h2>Subsidence can be slowed. Some of it can be stopped.</h2>
+    <p>Geologist Mahar Lagmay has said subsidence from pumping could be reversed with effective government policy on well digging. Sea level rise needs a wider, global response.</p>
+  </div>
+  <div class="grid g3">
+    <div class="card">
+      <span class="tag w">Community actions</span>
+      <h3>What neighbors can do</h3>
+      <ul>
+        <li>Do not dig unregistered deep wells, and report illegal ones to the barangay or NWRB.</li>
+        <li>Connect to piped or bulk water where it is offered.</li>
+        <li>Report cracks, sinking roads and flood depths using the form on this site.</li>
+        <li>Plan houses and evacuation routes with upper floors and raised storage.</li>
+        <li>Keep canals and waterways clear of garbage.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag w">Government initiatives</span>
+      <h3>What is already in place</h3>
+      <ul>
+        <li>The National Water Resources Board regulates extraction and sealed 1,008 illegal or abandoned deep wells from 2008 to 2013.</li>
+        <li>Groundwater extraction is restricted in parts of Bulacan. Reports differ on the start year (2004 or 2015).</li>
+        <li>Hagonoy was among seven water districts that signed for the Bulacan Bulk Water Supply Project in 2021, meant to reduce reliance on deep wells.</li>
+        <li>Researchers installed six low-cost GNSS stations in high-subsidence areas of the Bulacan and Pampanga delta.</li>
+        <li>A national government study on the way forward is not expected until 2028.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag w">Sustainable practices</span>
+      <h3>Longer-term fixes</h3>
+      <ul>
+        <li>Shift from groundwater to surface-water supply.</li>
+        <li>Harvest rainwater for non-drinking use to cut pumping.</li>
+        <li>Protect and replant mangroves and nipa along the coast to soften waves.</li>
+        <li>Include subsidence risk in land-use plans and building permits.</li>
+        <li>Keep local monitoring going so changes are caught early.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">Researchers call localized subsidence monitoring an urgent need and recommend better data from water utilities and the Philippine Statistics Authority, plus subsidence risk in land-use planning (Maclang et al., 2026). The rainwater, mangrove and canal items are widely used good practices, not findings of a single Hagonoy study.</p>
+</div></section>
+
+<!-- LEARN -->
+<section id="learn" class="alt"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Interactive feature</p>
+    <h2>Test what you learned</h2>
+    <p>Try the sinking calculator, take the eight-question quiz, then read the FAQ.</p>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h3>Sinking calculator</h3>
+    <p style="color:var(--muted)">Pick a rate from the studies and a number of years. This is a simple straight-line example for learning, since real rates change from place to place and year to year.</p>
+    <div class="calc">
+      <div>
+        <div class="row"><label for="rate">Rate</label>
+          <select id="rate">
+            <option value="25">25 mm/yr · UP-NIGS, rapid areas of Bulacan (2 to 3 cm)</option>
+            <option value="70.22">70.2 mm/yr · within 500 m of pumping stations</option>
+            <option value="81" selected>81 mm/yr · estimate for Hagonoy</option>
+            <option value="109">109 mm/yr · fastest in national study</option>
+            <option value="124.51">124.5 mm/yr · maximum near extraction zones</option>
+          </select></div>
+        <div class="row"><label for="yrs">Years: <span id="yrsv" class="mono">10</span></label>
+          <input type="range" id="yrs" min="1" max="30" value="10"></div>
+        <p class="out" id="calcOut"></p>
+        <p id="calcTxt" style="color:var(--muted);margin-top:.5rem"></p>
+      </div>
+      <svg viewBox="0 0 150 240" aria-hidden="true" style="width:100%;max-width:150px;justify-self:center">
+        <rect x="0" y="20" width="150" height="220" fill="#0F7C8C" opacity=".12"/>
+        <line x1="5" y1="20" x2="145" y2="20" stroke="var(--muted)" stroke-dasharray="5 4" stroke-width="2"/>
+        <text x="8" y="14" style="font-family:var(--font-mono);font-size:10px;fill:var(--muted)">today</text>
+        <rect id="calcBar" x="60" y="20" width="30" height="0" fill="var(--alert)"/>
+        <line id="calcNew" x1="5" x2="145" y1="20" y2="20" stroke="var(--alert)" stroke-width="3"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h3>Quiz</h3>
+    <div id="quiz"></div>
+  </div>
+
+  <div class="card">
+    <h3>Frequently asked questions</h3>
+    <details><summary>Is land subsidence the same as a sinkhole?</summary><p>No. A sinkhole is a sudden collapse in one spot. Subsidence is slow and wide, often just millimeters or centimeters a year, which is why it is easy to miss until floods get worse.</p></details>
+    <details><summary>Can the ground come back up?</summary><p>Mostly not. Once clay layers compact after water is removed, they do not expand fully again. That is why stopping the pumping early matters. Lagmay has said policy on well digging could reverse the trend, meaning stop further sinking.</p></details>
+    <details><summary>Is my own well a problem?</summary><p>One household well is small, but thousands of wells together can drain the aquifer. Using piped water where available and registering any well with the proper office helps.</p></details>
+    <details><summary>Why does it flood even when it did not rain much?</summary><p>High tides can push seawater into low areas. In Pugad, tide flooding happens at least three times a week.</p></details>
+    <details><summary>How do scientists measure it?</summary><p>Satellites such as Sentinel-1 compare radar images over time (InSAR), and ground stations (GNSS) and surveyed benchmarks check the results.</p></details>
+    <details><summary>Where can I get official hazard information?</summary><p>Project NOAH of the University of the Philippines, the Mines and Geosciences Bureau, the NWRB and your municipal DRRM office.</p></details>
+  </div>
+</div></section>
+
+<!-- REPORT -->
+<section id="report"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Community feedback and reporting</p>
+    <h2>Report what you see</h2>
+    <p>Notice a new crack, a road that keeps sinking, or a flood that is deeper than before? Share it. Use the official Google Form to send your report. The quick form below is a practice version that saves only on your device.</p>
+  </div>
+  <form class="card form" id="rform" novalidate>
+    <div><label for="f_name">Name (optional)</label><input type="text" id="f_name" autocomplete="name"></div>
+    <div><label for="f_brgy">Barangay</label>
+      <select id="f_brgy"><option value="">Choose barangay</option></select><div class="err" id="e_brgy" hidden>Choose a barangay.</div></div>
+    <div><label for="f_type">What did you observe?</label>
+      <select id="f_type"><option value="">Choose one</option><option>Flooding (rain or high tide)</option><option>Cracked or sinking road</option><option>Cracked house or wall</option><option>Illegal or unregistered deep well</option><option>Salty or bad-tasting well water</option><option>Other</option></select><div class="err" id="e_type" hidden>Choose what you observed.</div></div>
+    <div><label for="f_date">Date observed</label><input type="date" id="f_date"></div>
+    <div class="full"><label for="f_desc">Describe it (location, depth, how long)</label><textarea id="f_desc" rows="4"></textarea><div class="err" id="e_desc" hidden>Add a short description, at least 10 characters.</div></div>
+    <div class="full"><button class="btn" type="submit">Save report</button>
+      <a class="btn line" id="gform" href="#report" hidden target="_blank" rel="noopener">Send report with Google Form</a></div>
+    <div class="full msg" id="ok" hidden role="status">Saved on this device only. To actually send your report, use the Google Form button.</div>
+  </form>
+  <div class="saved" id="saved" hidden><h3 style="margin-bottom:.5rem">Your saved reports (this device only)</h3><ul id="slist"></ul></div>
+</div></section>
+
+<!-- REFERENCES -->
+<section id="references" class="alt"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">References</p>
+    <h2>Sources</h2>
+    <p>APA 7th edition. Open each link to check the original.</p>
+  </div>
+  <ol class="refs" style="list-style:none">
+    <li>Agence France-Presse. (2025, September 11). Against the tide: Filipinos battle rising sea on sinking island. <i>The National</i>. <a href="https://www.thenationalnews.com/climate/environment/2025/09/11/philippines-sinking-island-flooding" target="_blank" rel="noopener">https://www.thenationalnews.com/climate/environment/2025/09/11/philippines-sinking-island-flooding</a></li>
+    <li>Hazard Team NOAH. (2024, September 20). Understanding ground subsidence: A growing threat to Philippine communities. UP Resilience Institute. <a href="https://resilience.up.edu.ph/understanding-ground-subsidence-a-growing-threat-to-philippine-communities/" target="_blank" rel="noopener">https://resilience.up.edu.ph/understanding-ground-subsidence-a-growing-threat-to-philippine-communities/</a></li>
+    <li>Inquirer Research. (2019, March 29). In the know: Risks of groundwater extraction. <i>Philippine Daily Inquirer</i>. <a href="https://newsinfo.inquirer.net/?p=1101050" target="_blank" rel="noopener">https://newsinfo.inquirer.net/?p=1101050</a></li>
+    <li>Maclang, J. D. C., Narca, A. M. Y., Reyes, R. B., &amp; Mabaquiao, L. C. S. (2026). Correlation of land subsidence with groundwater extraction and urbanization in Hagonoy and Calumpit, Bulacan from 2015 to 2021-Q1. <i>ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial Information Sciences, X-5/W4-2025</i>, 307–314. <a href="https://doi.org/10.5194/isprs-annals-X-5-W4-2025-307-2026" target="_blank" rel="noopener">https://doi.org/10.5194/isprs-annals-X-5-W4-2025-307-2026</a></li>
+    <li>Manila Bulletin. (2021, September 7). More Bulacan towns given access to San Miguel water supply. <a href="https://mb.com.ph/2021/9/7/more-bulacan-towns-given-access-to-san-miguel-water-supply" target="_blank" rel="noopener">https://mb.com.ph/2021/9/7/more-bulacan-towns-given-access-to-san-miguel-water-supply</a></li>
+    <li>PhilAtlas. (n.d.). <i>Hagonoy, Province of Bulacan</i>. Retrieved November 6, 2026, from <a href="https://www.philatlas.com/luzon/r03/bulacan/hagonoy.html" target="_blank" rel="noopener">https://www.philatlas.com/luzon/r03/bulacan/hagonoy.html</a></li>
+    <li>Reyes, R., Minderhoud, P., Maclang, J. D., &amp; Narca, A. M. (2026). Measuring ground subsidence rate in Bulacan and Pampanga delta using geodetic techniques. <i>The International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences, XLVIII-5/W4-2025</i>, 207–212. <a href="https://doi.org/10.5194/isprs-archives-XLVIII-5-W4-2025-207-2026" target="_blank" rel="noopener">https://doi.org/10.5194/isprs-archives-XLVIII-5-W4-2025-207-2026</a></li>
+    <li>Santos, J. (2023, August 11). Pagbaha sa maraming bayan sa Bulacan, may solusyon pa nga ba? <i>GMA Integrated News</i>. <a href="https://www.gmanetwork.com/news/balitambayan/trending/878559/pagbaha-sa-maraming-bayan-sa-bulacan-may-solusyon-pa-nga-ba/story/" target="_blank" rel="noopener">https://www.gmanetwork.com/news/balitambayan/trending/878559/pagbaha-sa-maraming-bayan-sa-bulacan-may-solusyon-pa-nga-ba/story/</a></li>
+  </ol>
+</div></section>
+</main>
+
+<footer><div class="wrap"><b>Hagonoy GroundWatch: A Web-Based Environmental Awareness Platform on Land Subsidence.</b><br>Environmental Science final course output, 1st semester 2026–2027. Educational project, not an official hazard map or government service.</div></footer>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+
+  /* theme toggle */
+  $('#themeBtn').addEventListener('click',function(){
+    var root=document.documentElement, cur=root.getAttribute('data-theme');
+    if(!cur) cur=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    root.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  });
+
+  /* nav highlight */
+  var links=$$('#navlist a.l');
+  var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1))});
+  function onScroll(){
+    var y=window.scrollY+120,cur=-1;
+    secs.forEach(function(s,i){if(s&&s.offsetTop<=y)cur=i});
+    links.forEach(function(a,i){a.classList.toggle('on',i===cur)});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+  /* tabs */
+  var tabs=$$('.tab');
+  function selTab(i){
+    tabs.forEach(function(t,j){t.setAttribute('aria-selected',j===i?'true':'false');document.getElementById(t.getAttribute('aria-controls')).hidden=(j!==i)});
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click',function(){selTab(i)});
+    t.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'){e.preventDefault();selTab((i+1)%3);tabs[(i+1)%3].focus()}
+      if(e.key==='ArrowLeft'){e.preventDefault();selTab((i+2)%3);tabs[(i+2)%3].focus()}
+    });
+  });
+
+  /* map */
+  var gm=function(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)};
+  var spots={
+    pugad:{t:'Pugad island, Hagonoy',lvl:'Documented flooding',c:'var(--k1)',
+      b:'High tides flood the streets at least three times a week, and water can reach 1.5 m on the worst days. About 2,500 people live in the only village. Roads are raised roughly every three years, and school schedules follow tide charts. Reports cite subsidence of almost 11 cm a year in this part of Bulacan.',
+      s:'Source: Agence France-Presse (2025).',q:'Pugad, Hagonoy, Bulacan'},
+    pump:{t:'Pumping-station zones, Hagonoy and Calumpit',lvl:'Satellite measurement',c:'var(--k2)',
+      b:'Sentinel-1 radar data from 2015 to early 2021 show an average of 70.2 mm/yr of sinking within 500 m of pumping stations and up to 124.5 mm/yr near high-extraction zones. Hagonoy\'s yearly extraction of about 9 million m³ may account for about 81 mm/yr.',
+      s:'Source: Maclang et al. (2026). Exact pump locations are not shown here.',q:'Hagonoy, Bulacan'},
+    town:{t:'Hagonoy town center',lvl:'Reported damage and flooding',c:'var(--k3)',
+      b:'The municipal center is about 6.2 m above sea level. Roads and homes in Hagonoy are reported to be sinking, and residents raise their houses or abandon lower floors. In August 2023 floodwater reached chest level in Hagonoy homes.',
+      s:'Sources: PhilAtlas; Hazard Team NOAH (2024); Santos (2023).',q:'Hagonoy Municipal Hall, Bulacan'},
+    coast:{t:'Manila Bay coastline',lvl:'Sea level exposure',c:'var(--k4)',
+      b:'Philippine sea level is rising about three times faster than the global average of 3.6 mm per year, and the DENR says it could reach 13 mm a year. Low, sinking land near the bay has the least room before the tide arrives.',
+      s:'Source: Agence France-Presse (2025).',q:'Manila Bay coast, Hagonoy, Bulacan'},
+    delta:{t:'Bulacan and Pampanga delta lowlands',lvl:'GNSS monitoring',c:'var(--k2)',
+      b:'Satellite mapping shows the Pampanga River basin is subsiding. Re-measured benchmarks in Bulacan also point down, and in the first three months of observation four of six new low-cost GNSS stations showed a downward trend.',
+      s:'Source: Reyes et al. (2026).',q:'Hagonoy, Bulacan'}
+  };
+  var info=$('#info');
+  function show(k){
+    var d=spots[k];
+    info.innerHTML='<p class="lvl" style="color:'+d.c+'">'+d.lvl+'</p><h3>'+d.t+'</h3><p style="margin-top:.6rem">'+d.b+'</p><p class="note">'+d.s+'</p><a class="btn line" target="_blank" rel="noopener" href="'+gm(d.q)+'">Open in Google Maps</a>';
+    $$('.hs').forEach(function(g){g.setAttribute('aria-pressed',g.getAttribute('data-k')===k?'true':'false')});
+  }
+  $$('.hs').forEach(function(g){
+    g.addEventListener('click',function(){show(g.getAttribute('data-k'))});
+    g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();show(g.getAttribute('data-k'))}});
+  });
+  show('pugad');
+
+  /* calculator */
+  function calc(){
+    var r=parseFloat($('#rate').value),y=parseInt($('#yrs').value,10),cm=r*y/10;
+    $('#yrsv').textContent=y;
+    $('#calcOut').textContent=(cm>=100?(cm/100).toFixed(2)+' m':cm.toFixed(1)+' cm');
+    var ref=cm>=210?'taller than a standard door (about 2.1 m).':cm>=90?'about the height of a kitchen counter.':cm>=30?'about the height of a stair step to a stilted house floor, several times over.':'small each year, but it adds up.';
+    $('#calcTxt').textContent='lower than today after '+y+' year'+(y>1?'s':'')+', '+ref;
+    var px=Math.min(215,cm*0.9);
+    $('#calcBar').setAttribute('height',px);$('#calcNew').setAttribute('y1',20+px);$('#calcNew').setAttribute('y2',20+px);
+  }
+  $('#rate').addEventListener('change',calc);$('#yrs').addEventListener('input',calc);calc();
+
+  /* quiz */
+  var Q=[
+    {q:'What is land subsidence?',a:'The gradual sinking of the ground surface',w:['A sudden collapse of a cave','The rising of sea level','The shaking of the ground in an earthquake'],e:'Subsidence is slow and widespread. A sinkhole is the sudden kind.'},
+    {q:'Which human activity is the main driver of subsidence in Hagonoy and Calumpit?',a:'Pumping too much groundwater',w:['Planting more rice','Building taller churches','Dredging the bay for sand'],e:'Studies found faster sinking near pumping stations.'},
+    {q:'Which technology did researchers use to measure sinking from space?',a:'Sentinel-1 radar (InSAR)',w:['Aerial photographs from drones only','Weather balloons','Sonar'],e:'Radar images taken over time reveal tiny ground movements.'},
+    {q:'About how fast did land sink within 500 m of pumping stations in Hagonoy and Calumpit?',a:'About 70 mm per year',w:['About 0.7 mm per year','About 7 meters per year','No measurable change'],e:'The average was 70.22 mm/yr, compared with 65.31 mm/yr farther away.'},
+    {q:'Philippine sea level is rising about how many times faster than the global average?',a:'About three times',w:['The same speed','Half as fast','Ten times'],e:'Sinking land and rising sea together make coastal flooding worse.'},
+    {q:'Which agency regulates water extraction in the Philippines?',a:'National Water Resources Board (NWRB)',w:['Philippine Statistics Authority','Bureau of Fire Protection','Philippine Ports Authority'],e:'The NWRB coordinates and regulates water resources, including well permits.'},
+    {q:'How does subsidence make flooding worse?',a:'Lower land sits closer to tide and river levels, so floods are deeper and last longer',w:['It makes rain heavier','It makes seawater less salty','It has no effect on flooding'],e:'In Pugad, tides flood the streets at least three times a week.'},
+    {q:'Which action best helps stop further subsidence?',a:'Use piped surface water and avoid illegal deep wells',w:['Dig a deeper well','Fill in the canals','Ignore small cracks'],e:'Less pumping means the aquifer can recover and ground sinking slows.'}
+  ];
+  var qi=0,score=0,qbox=$('#quiz');
+  function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function renderQ(){
+    if(qi>=Q.length){
+      var msg=score>=7?'Excellent. You are ready to teach your barangay.':score>=5?'Good work. Review the sections above and try again.':'Keep going. Read the Causes and Solutions sections and retry.';
+      qbox.innerHTML='<div class="bar"><i style="width:100%"></i></div><p class="out" style="font-size:2rem">'+score+' / '+Q.length+'</p><p>'+msg+'</p><button class="btn" id="qr" type="button">Try again</button>';
+      $('#qr').addEventListener('click',function(){qi=0;score=0;renderQ()});return;
+    }
+    var q=Q[qi],opts=shuf([q.a].concat(q.w));
+    qbox.innerHTML='<div class="bar"><i style="width:'+(qi/Q.length*100)+'%"></i></div><p class="qmeta">Question '+(qi+1)+' of '+Q.length+'</p><p style="font-weight:600;font-size:1.05rem">'+esc(q.q)+'</p><div id="opts"></div><div class="fb" id="fb" aria-live="polite"></div>';
+    var box=$('#opts');
+    opts.forEach(function(o){
+      var b=document.createElement('button');b.type='button';b.className='qopt';b.textContent=o;
+      b.addEventListener('click',function(){
+        var ok=o===q.a;if(ok)score++;
+        $$('.qopt').forEach(function(x){x.disabled=true;if(x.textContent===q.a)x.classList.add('right')});
+        if(!ok)b.classList.add('wrong');
+        $('#fb').innerHTML='<b>'+(ok?'Correct.':'Not quite.')+'</b> '+esc(q.e)+'<br><br><button class="btn" id="nx" type="button">'+(qi===Q.length-1?'See score':'Next question')+'</button>';
+        $('#nx').addEventListener('click',function(){qi++;renderQ()});$('#nx').focus();
+      });
+      box.appendChild(b);
+    });
+  }
+  renderQ();
+
+  /* form */
+  var B=['Abulalas','Carillo','Iba','Iba-Ibayo','Mercado','Palapat','Pugad','Sagrada Familia','San Agustin','San Isidro','San Jose','San Juan','San Miguel','San Nicolas','San Pablo','San Pascual','San Pedro','San Roque','San Sebastian','Santa Cruz','Santa Elena','Santa Monica','Santo Niño','Santo Rosario','Tampok','Tibaguin'];
+  var sel=$('#f_brgy');B.forEach(function(b){var o=document.createElement('option');o.textContent=b;sel.appendChild(o)});
+  /* To use a real Google Form, put its public link here. The button appears automatically. */
+  var GOOGLE_FORM_URL='https://forms.gle/eKmfKv21zqmPiejMA';
+  if(GOOGLE_FORM_URL){var g=$('#gform');g.href=GOOGLE_FORM_URL;g.hidden=false}
+  var reports=[];
+  try{reports=JSON.parse(localStorage.getItem('hgw_reports')||'[]')}catch(e){reports=[]}
+  function drawReports(){
+    var s=$('#saved'),l=$('#slist');l.innerHTML='';
+    if(!reports.length){s.hidden=true;return}
+    s.hidden=false;
+    reports.slice().reverse().forEach(function(r){var li=document.createElement('li');li.textContent=r.brgy+' · '+r.type+(r.date?' · '+r.date:'')+' · '+r.desc;l.appendChild(li)});
+  }
+  drawReports();
+  $('#rform').addEventListener('submit',function(e){
+    e.preventDefault();
+    var b=sel.value,t=$('#f_type').value,d=$('#f_desc').value.trim(),bad=false;
+    $('#e_brgy').hidden=!!b;$('#e_type').hidden=!!t;$('#e_desc').hidden=d.length>=10;
+    bad=!b||!t||d.length<10;
+    if(bad){$('#ok').hidden=true;return}
+    reports.push({brgy:b,type:t,date:$('#f_date').value,desc:d});
+    try{localStorage.setItem('hgw_reports',JSON.stringify(reports))}catch(x){}
+    drawReports();$('#ok').hidden=false;
+    $('#f_desc').value='';$('#f_type').value='';sel.value='';$('#f_date').value='';
+  });
+})();
+</script>
